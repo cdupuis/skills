@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: launch-post
+expected_outcome: |
+  A short launch post in a person's voice: the news, the facts, the command and the link, with no launch-post cliches and none of the AI tells.
