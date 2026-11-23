@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: slack-build-speedup
+expected_outcome: |
+  A short Slack message in a normal colleague's voice that carries every fact and none of the AI tells.
