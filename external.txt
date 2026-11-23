@@ -1,0 +1,28 @@
+# Skills from other repos, fetched when the kit is built.
+#
+# One source per line:
+#
+#   REPO COMMIT SHA256 KIND PATH
+#
+# REPO    owner/name on github.com
+# COMMIT  full commit id; a tag or branch can move, a commit cannot
+# SHA256  of https://codeload.github.com/REPO/tar.gz/COMMIT
+# KIND    "skills" when PATH holds one directory per skill,
+#         "skill" when PATH is a single skill directory
+# PATH    inside the repo
+#
+# To update a source, change COMMIT and SHA256, then add or remove the
+# agent-skill@1 entries in skills.yaml as the build asks.
+
+# superpowers v7.0.2
+obra/superpowers 22f0b463e7a5e579904dd6211a520321035526f7 5f15e6bfa1b628ebabc84f88508b9652f5c7b8cb4529731e266006ba8f798976 skills skills
+
+# No releases upstream; main as of 2026-11-15.
+emilkowalski/skills 64eb3deb9a5fbfa041faf783e0bc3fd635872e9c 1ff7591c03f1cc539b1c1d6468aabae27e5543f120783d947d9ee9b79cba9350 skills skills
+
+# impeccable skill-v4.9.1. Upstream builds the skill once per agent; this
+# is the Claude Code build.
+pbakaus/impeccable acb4cfe14470b1fdf51e855431af618d936b7db8 d8171c8f4b9b3037befbc3f4c41cfa7144ebeda57ef8e0a2b8127ebf4683a46c skill .claude/skills/impeccable
+
+# taste-skill v2.5.1
+Leonxlnx/taste-skill f6b76575f949707b4e3c37cd86cb44b0b98643e8 abd5691275f8ce7593962e83e5c4f7654b545c7712d7d71bb08b21ed75828bb6 skill skills/taste-skill

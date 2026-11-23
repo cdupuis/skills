@@ -2,20 +2,182 @@
 schemaVersion: "3"
 kind: mixin
 displayName: cdupuis skills
-description: The agent skills from github.com/cdupuis/skills, shown in the agent's skill directory.
+description: The agent skills in github.com/cdupuis/skills and the external ones it pins (superpowers, emilkowalski/skills, impeccable, taste), shown in the agent's skill directory.
 sourceUrl: https://github.com/cdupuis/skills
-version: "1.0.0"
+version: "1.1.0"
+# The external skills. The humanizer skill in this repo has no license.
+licenses: [MIT, Apache-2.0]
 
 capabilities:
-  # One entry per skill directory in this repo; the build fails when a
-  # skill has no entry here. Optional, so that a sandbox whose skill
-  # store already holds a skill of the same name still starts: the
-  # runtime never overwrites an existing skill and would refuse a
-  # required request.
+  # One entry per skill: the directories of this repo, then the skills
+  # of the repos in external.txt. The build fails when a skill has no
+  # entry here, or an entry has no skill.
+  #
+  # Optional, so that a sandbox whose skill store already holds a skill
+  # of the same name still starts: the runtime never overwrites an
+  # existing skill and would refuse a required request.
+
+  # This repo
   - type: com.docker.sandbox/agent-skill@1
     optional: true
     config:
       path: /usr/share/cdupuis-skills/humanizer
+
+  # superpowers (obra/superpowers)
+  - type: com.docker.sandbox/agent-skill@1
+    optional: true
+    config:
+      path: /usr/share/cdupuis-skills/brainstorming
+  - type: com.docker.sandbox/agent-skill@1
+    optional: true
+    config:
+      path: /usr/share/cdupuis-skills/diagnosing-superpowers
+  - type: com.docker.sandbox/agent-skill@1
+    optional: true
+    config:
+      path: /usr/share/cdupuis-skills/dispatching-parallel-agents
+  - type: com.docker.sandbox/agent-skill@1
+    optional: true
+    config:
+      path: /usr/share/cdupuis-skills/executing-plans
+  - type: com.docker.sandbox/agent-skill@1
+    optional: true
+    config:
+      path: /usr/share/cdupuis-skills/finishing-a-development-branch
+  - type: com.docker.sandbox/agent-skill@1
+    optional: true
+    config:
+      path: /usr/share/cdupuis-skills/receiving-code-review
+  - type: com.docker.sandbox/agent-skill@1
+    optional: true
+    config:
+      path: /usr/share/cdupuis-skills/requesting-code-review
+  - type: com.docker.sandbox/agent-skill@1
+    optional: true
+    config:
+      path: /usr/share/cdupuis-skills/subagent-driven-development
+  - type: com.docker.sandbox/agent-skill@1
+    optional: true
+    config:
+      path: /usr/share/cdupuis-skills/systematic-debugging
+  - type: com.docker.sandbox/agent-skill@1
+    optional: true
+    config:
+      path: /usr/share/cdupuis-skills/test-driven-development
+  - type: com.docker.sandbox/agent-skill@1
+    optional: true
+    config:
+      path: /usr/share/cdupuis-skills/using-git-worktrees
+  - type: com.docker.sandbox/agent-skill@1
+    optional: true
+    config:
+      path: /usr/share/cdupuis-skills/using-superpowers
+  - type: com.docker.sandbox/agent-skill@1
+    optional: true
+    config:
+      path: /usr/share/cdupuis-skills/verification-before-completion
+  - type: com.docker.sandbox/agent-skill@1
+    optional: true
+    config:
+      path: /usr/share/cdupuis-skills/writing-plans
+  - type: com.docker.sandbox/agent-skill@1
+    optional: true
+    config:
+      path: /usr/share/cdupuis-skills/writing-skills
+
+  # emilkowalski/skills
+  - type: com.docker.sandbox/agent-skill@1
+    optional: true
+    config:
+      path: /usr/share/cdupuis-skills/animate
+  - type: com.docker.sandbox/agent-skill@1
+    optional: true
+    config:
+      path: /usr/share/cdupuis-skills/animate-expo
+  - type: com.docker.sandbox/agent-skill@1
+    optional: true
+    config:
+      path: /usr/share/cdupuis-skills/animation-performance
+  - type: com.docker.sandbox/agent-skill@1
+    optional: true
+    config:
+      path: /usr/share/cdupuis-skills/animation-vocabulary
+  - type: com.docker.sandbox/agent-skill@1
+    optional: true
+    config:
+      path: /usr/share/cdupuis-skills/apple-design
+  - type: com.docker.sandbox/agent-skill@1
+    optional: true
+    config:
+      path: /usr/share/cdupuis-skills/ask-emil
+  - type: com.docker.sandbox/agent-skill@1
+    optional: true
+    config:
+      path: /usr/share/cdupuis-skills/ask-sonner
+  - type: com.docker.sandbox/agent-skill@1
+    optional: true
+    config:
+      path: /usr/share/cdupuis-skills/break-ui
+  - type: com.docker.sandbox/agent-skill@1
+    optional: true
+    config:
+      path: /usr/share/cdupuis-skills/choreograph
+  - type: com.docker.sandbox/agent-skill@1
+    optional: true
+    config:
+      path: /usr/share/cdupuis-skills/emil-design-eng
+  - type: com.docker.sandbox/agent-skill@1
+    optional: true
+    config:
+      path: /usr/share/cdupuis-skills/find-animation-opportunities
+  - type: com.docker.sandbox/agent-skill@1
+    optional: true
+    config:
+      path: /usr/share/cdupuis-skills/gestures
+  - type: com.docker.sandbox/agent-skill@1
+    optional: true
+    config:
+      path: /usr/share/cdupuis-skills/improve-animations
+  - type: com.docker.sandbox/agent-skill@1
+    optional: true
+    config:
+      path: /usr/share/cdupuis-skills/learn-taste
+  - type: com.docker.sandbox/agent-skill@1
+    optional: true
+    config:
+      path: /usr/share/cdupuis-skills/mobile-native
+  - type: com.docker.sandbox/agent-skill@1
+    optional: true
+    config:
+      path: /usr/share/cdupuis-skills/pick-ui-library
+  - type: com.docker.sandbox/agent-skill@1
+    optional: true
+    config:
+      path: /usr/share/cdupuis-skills/prototype
+  - type: com.docker.sandbox/agent-skill@1
+    optional: true
+    config:
+      path: /usr/share/cdupuis-skills/remove-animations
+  - type: com.docker.sandbox/agent-skill@1
+    optional: true
+    config:
+      path: /usr/share/cdupuis-skills/review-animations
+  - type: com.docker.sandbox/agent-skill@1
+    optional: true
+    config:
+      path: /usr/share/cdupuis-skills/write-swift
+
+  # impeccable (pbakaus/impeccable)
+  - type: com.docker.sandbox/agent-skill@1
+    optional: true
+    config:
+      path: /usr/share/cdupuis-skills/impeccable
+
+  # taste (Leonxlnx/taste-skill)
+  - type: com.docker.sandbox/agent-skill@1
+    optional: true
+    config:
+      path: /usr/share/cdupuis-skills/taste-skill
 
   # The context is for agents with no skill discovery, and it repeats the
   # standing rule so that the skill is used without being asked for.

@@ -6,6 +6,15 @@ Agent skills I use, and a Docker Sandboxes kit that installs them.
 |---|---|
 | [humanizer](humanizer/SKILL.md) | Makes text read as written by a person. Carries the list of tells from Wikipedia's "Signs of AI writing" and a script that flags them in a draft. |
 
+The kit also installs skills from other repos. They are not copied into this repo; the build fetches each at a pinned commit, listed in [`external.txt`](external.txt).
+
+| Source | Version | Skills | License |
+|---|---|---|---|
+| [obra/superpowers](https://github.com/obra/superpowers) | v7.0.2 | 15 | MIT |
+| [emilkowalski/skills](https://github.com/emilkowalski/skills) | `main` at 64eb3de (2026-11-15) | 20 | MIT |
+| [pbakaus/impeccable](https://github.com/pbakaus/impeccable) | skill-v4.9.1 | 1 | Apache-2.0 |
+| [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill) | v2.5.1 | 1 | MIT |
+
 ## Layout
 
 Each skill is one top-level directory with a `SKILL.md`. One v3 mixin kit at the root of the repo installs all of them.
@@ -13,6 +22,7 @@ Each skill is one top-level directory with a `SKILL.md`. One v3 mixin kit at the
 ```
 skills.yaml            kit descriptor
 skills.dockerfile      kit recipe
+external.txt           skills from other repos, pinned
 humanizer/
   SKILL.md             the skill
   scripts/check.py     the checker
@@ -25,6 +35,19 @@ humanizer/
 1. Add a directory with a `SKILL.md`. The recipe picks up every top-level directory that has one.
 2. Add an `agent-skill@1` entry for it to `skills.yaml`. The path has to be written out there, so the build fails when a skill has no entry.
 3. Bump `version:` in `skills.yaml`.
+
+## Add or update an external skill
+
+1. Add a line to `external.txt`: the repo, a full commit id, the SHA-256 of that commit's tarball, and where the skills are in the repo. The file explains the format. To update a source, change the commit and the checksum.
+
+   ```console
+   $ curl -fsSL https://codeload.github.com/OWNER/REPO/tar.gz/COMMIT | sha256sum
+   ```
+
+2. Add an `agent-skill@1` entry to `skills.yaml` for each skill the source brings, and remove entries for skills it dropped. The build names the ones that are missing or left over.
+3. Bump `version:` in `skills.yaml`.
+
+Two skills can't have the same directory name; the build stops when they do.
 
 ## Use the skills in a sandbox
 
@@ -59,7 +82,14 @@ Nothing is published to a registry yet.
 - All of its capabilities are optional. A sandbox whose skill store already holds a skill of the same name still starts; it keeps the one it has.
 - It asks for no network access and no credentials.
 
-The humanizer checker needs `python3` in the sandbox. The kit doesn't install it. The `claude` agent kit has it. Without it, the skill still works from its list of tells.
+The upstream licenses are in `/usr/share/doc/cdupuis-skills/`.
+
+Some skills need things the kit doesn't install or set up:
+
+- The humanizer checker needs `python3`. The `claude` agent kit has it. Without it, the skill still works from its list of tells.
+- superpowers is installed as plain skills. Its plugin also has a session-start hook that loads `using-superpowers` into every session; the kit doesn't set that up, so the agent picks these skills by their descriptions.
+- impeccable is upstream's Claude Code build. Upstream builds the skill once per agent, and a kit can ship one build under a name. Its launcher downloads an engine binary from the project's GitHub releases on first run, so the sandbox needs network access to github.com for that.
+- taste-skill needs Node 22 or later and Chrome, Edge or Chromium for its checker. It is about 36 MB, most of it reference images.
 
 `evals/` directories are left out of the kit.
 
@@ -74,11 +104,13 @@ $ ln -s "$PWD/humanizer" ~/.claude/skills/humanizer
 ## Build and check the kit
 
 ```console
-# descriptor only; fails in a second on a bad field
+# descriptor only; fails fast on a bad field
 $ docker buildx build . -f skills.yaml --output type=cacheonly
 
 # build, then check conformance with kit-tck from docker/sandbox-kit-spec
-$ docker buildx build . -f skills.yaml -t skills:1.0.0 \
+$ docker buildx build . -f skills.yaml -t skills:1.1.0 \
     --output type=oci,dest=/tmp/skills-layout,tar=false
-$ kit-tck validate --layout /tmp/skills-layout 1.0.0
+$ kit-tck validate --layout /tmp/skills-layout 1.1.0
 ```
+
+The build downloads the external skills from codeload.github.com.
