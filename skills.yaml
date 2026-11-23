@@ -1,15 +1,17 @@
 # syntax=docker/sandbox-kit:3
 schemaVersion: "3"
 kind: mixin
-displayName: Humanizer skill
-description: Agent skill that makes text read as written by a person, with a checker for the tells of AI writing.
+displayName: cdupuis skills
+description: The agent skills from github.com/cdupuis/skills, shown in the agent's skill directory.
 sourceUrl: https://github.com/cdupuis/skills
 version: "1.0.0"
 
 capabilities:
-  # Optional, so that a sandbox whose skill store already holds a
-  # `humanizer` skill still starts: the runtime never overwrites an
-  # existing skill of the same name and would refuse a required request.
+  # One entry per skill directory in this repo; the build fails when a
+  # skill has no entry here. Optional, so that a sandbox whose skill
+  # store already holds a skill of the same name still starts: the
+  # runtime never overwrites an existing skill and would refuse a
+  # required request.
   - type: com.docker.sandbox/agent-skill@1
     optional: true
     config:

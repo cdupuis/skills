@@ -1,0 +1,5 @@
+# Keep the build context to the skill directories and the descriptor.
+.git
+.github
+README.md
+**/__pycache__
