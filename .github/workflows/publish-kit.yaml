@@ -38,7 +38,7 @@ jobs:
       distribute: true
       sbom: true
       push: true
-      meta-images: ghcr.io/cdupuis/skills
+      meta-images: ghcr.io/${{ github.repository }}
       # Every branch gets a commit tag; only the default branch advances latest.
       meta-tags: |
         type=raw,value=sha-${{ github.sha }}
@@ -56,6 +56,8 @@ jobs:
     permissions:
       contents: read
       packages: read
+    env:
+      IMAGE: ghcr.io/${{ github.repository }}
     steps:
       - name: Log in to GHCR
         uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
@@ -79,7 +81,8 @@ jobs:
         run: |
           set -euo pipefail
           test -n "$DIGEST"
-          image="ghcr.io/cdupuis/skills@$DIGEST"
+          # Match metadata-action's lowercase image name for registry reads.
+          image="${IMAGE,,}@$DIGEST"
           index="$RUNNER_TEMP/kit-index.json"
           docker buildx imagetools inspect "$image" --raw > "$index"
           # Attestation descriptors use unknown/unknown. Only runnable
@@ -125,11 +128,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          latest_digest=$(docker buildx imagetools inspect ghcr.io/cdupuis/skills:latest \
+          image="${IMAGE,,}:latest"
+          latest_digest=$(docker buildx imagetools inspect "$image" \
             --format '{{.Manifest.Digest}}')
           if [ "$latest_digest" != "$DIGEST" ]; then
             printf 'latest points to %s, expected %s\n' "$latest_digest" "$DIGEST" >&2
             exit 1
           fi
-          printf 'Verified `ghcr.io/cdupuis/skills:latest` points to `%s`.\n' "$DIGEST" \
+          printf 'Verified `%s` points to `%s`.\n' "$image" "$DIGEST" \
             >> "$GITHUB_STEP_SUMMARY"
