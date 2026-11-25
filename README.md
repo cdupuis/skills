@@ -94,9 +94,10 @@ digest through `BUILDKIT_SYNTAX`. This frontend supports the builder's
 Git context. The current `:3` frontend does not yet include that support.
 
 Each run publishes `ghcr.io/cdupuis/skills:sha-<full-commit-sha>` using
-the repository's `GITHUB_TOKEN`. No registry secret is needed. The
-workflow does not publish release tags or `latest`, and the kit version
-still comes from `skills.yaml`.
+the repository's `GITHUB_TOKEN`. No registry secret is needed. Builds
+from the default branch also publish `ghcr.io/cdupuis/skills:latest`.
+Other branches publish only commit tags. The kit version still comes
+from `skills.yaml`.
 
 A separate job checks both platform manifests and reads each platform's
 SBOM and provenance from the registry. It checks that the provenance
@@ -104,7 +105,8 @@ names the current workflow run as its builder, then runs checksum-pinned
 `kit-tck` v3.0.0-m.13, installed by the spec repository's `setup-tck`
 action, against the published digest. The workflow passes
 only after validation passes. Its summary gives the immutable image
-reference to use in a sandbox.
+reference to use in a sandbox. Default-branch runs also check that
+`latest` resolves to the validated digest.
 
 The GHCR package is private. To pull it, log in with a personal access
 token with `read:packages` access to the package:

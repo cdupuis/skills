@@ -39,8 +39,10 @@ jobs:
       sbom: true
       push: true
       meta-images: ghcr.io/cdupuis/skills
-      # Branch builds must not replace a release tag or latest.
-      meta-tags: type=raw,value=sha-${{ github.sha }}
+      # Every branch gets a commit tag; only the default branch advances latest.
+      meta-tags: |
+        type=raw,value=sha-${{ github.sha }}
+        type=raw,value=latest,enable={{is_default_branch}}
       meta-flavor: latest=false
     secrets:
       registry-auths: |
@@ -115,3 +117,19 @@ jobs:
             printf 'Platforms: `linux/amd64`, `linux/arm64`.\n'
             printf 'Verified SPDX SBOM and SLSA provenance for each platform.\n'
           } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Verify latest points to the validated kit
+        if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+        env:
+          DIGEST: ${{ needs.build.outputs.digest }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          latest_digest=$(docker buildx imagetools inspect ghcr.io/cdupuis/skills:latest \
+            --format '{{.Manifest.Digest}}')
+          if [ "$latest_digest" != "$DIGEST" ]; then
+            printf 'latest points to %s, expected %s\n' "$latest_digest" "$DIGEST" >&2
+            exit 1
+          fi
+          printf 'Verified `ghcr.io/cdupuis/skills:latest` points to `%s`.\n' "$DIGEST" \
+            >> "$GITHUB_STEP_SUMMARY"
