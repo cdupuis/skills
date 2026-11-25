@@ -101,7 +101,8 @@ still comes from `skills.yaml`.
 A separate job checks both platform manifests and reads each platform's
 SBOM and provenance from the registry. It checks that the provenance
 names the current workflow run as its builder, then runs checksum-pinned
-`kit-tck` v3.0.0-m.13 against the published digest. The workflow passes
+`kit-tck` v3.0.0-m.13, installed by the spec repository's `setup-tck`
+action, against the published digest. The workflow passes
 only after validation passes. Its summary gives the immutable image
 reference to use in a sandbox.
 
