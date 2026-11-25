@@ -63,23 +63,11 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install kit-tck
-        env:
-          GH_TOKEN: ${{ github.token }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          tool_dir="$RUNNER_TEMP/kit-tck"
-          archive=kit-tck_3.0.0-m.13_linux_amd64.tar.gz
-          mkdir -p "$tool_dir"
-          gh release download v3.0.0-m.13 \
-            --repo docker/sandbox-kit-spec \
-            --pattern "$archive" --dir "$tool_dir"
-          cd "$tool_dir"
+        uses: docker/sandbox-kit-spec/actions/setup-tck@895b6ba40f07c6f0d3117f4303a6795ed8ae783b
+        with:
+          version: v3.0.0-m.13
           # Pin the validator bytes as well as its release name.
-          printf '%s  %s\n' \
-            9aaf699a662e55c35a2930dd4778a7f4e2317b563d64cc9d21622e6bac6f744c \
-            "$archive" | sha256sum --check --strict
-          tar -xzf "$archive" kit-tck
+          sha256: 9aaf699a662e55c35a2930dd4778a7f4e2317b563d64cc9d21622e6bac6f744c
 
       - name: Validate the published kit
         env:
@@ -121,7 +109,7 @@ jobs:
                     | startswith(env.BUILD_RUN_URL + "/attempts/")))' "$attestations"
           # Validate the registry artifact, including every platform
           # manifest, rather than trusting the build's local result.
-          "$RUNNER_TEMP/kit-tck/kit-tck" validate "$image"
+          kit-tck validate "$image"
           {
             printf 'Validated kit: `%s`\n\n' "$image"
             printf 'Platforms: `linux/amd64`, `linux/arm64`.\n'
