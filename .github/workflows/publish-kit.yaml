@@ -84,7 +84,7 @@ jobs:
       - name: Validate the published kit
         env:
           DIGEST: ${{ needs.build.outputs.digest }}
-          BUILDER_ID: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
+          BUILD_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         shell: bash
         run: |
           set -euo pipefail
@@ -103,6 +103,7 @@ jobs:
           # the kit annotations retained on each platform manifest.
           # Read the actual attestation payloads, indexed by platform,
           # rather than accepting descriptors without SBOM or provenance.
+          # Allow earlier attempts of this run when only validation is retried.
           attestations="$RUNNER_TEMP/kit-attestations.json"
           docker buildx imagetools inspect "$image" \
             --format '{"sbom":{{json .SBOM}},"provenance":{{json .Provenance}}}' \
@@ -116,7 +117,8 @@ jobs:
                 | (($sbom.spdxVersion // "") | startswith("SPDX-"))
                   and $sbom.SPDXID == "SPDXRef-DOCUMENT"
                   and $provenance.buildDefinition.buildType == "https://github.com/moby/buildkit/blob/master/docs/attestations/slsa-definitions.md"
-                  and $provenance.runDetails.builder.id == env.BUILDER_ID)' "$attestations"
+                  and (($provenance.runDetails.builder.id // "")
+                    | startswith(env.BUILD_RUN_URL + "/attempts/")))' "$attestations"
           # Validate the registry artifact, including every platform
           # manifest, rather than trusting the build's local result.
           "$RUNNER_TEMP/kit-tck/kit-tck" validate "$image"
