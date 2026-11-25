@@ -82,9 +82,12 @@ build `skills.yaml` for `linux/amd64` and `linux/arm64`. The builder reads
 the committed Git source, including the companion recipe and external
 skill pins.
 
-Both platforms build in one job with `distribute: false`, preserving the
-frontend's kit annotations on the image index. This kit stages files on
-the builder's CPU, so the build needs no emulation.
+Each platform builds on its own native runner with `distribute: true`.
+The workflow requests an SPDX SBOM, and the shared builder generates and
+signs attestations with SLSA v1 provenance. Provenance uses `mode=min`
+for this private repository and `mode=max` for public repositories.
+The combined index retains these attestations. Kit annotations remain
+on the platform manifests, so TCK warns about their absence on the index.
 
 The workflow pins the official kit frontend from commit `49950e9` by
 digest through `BUILDKIT_SYNTAX`. This frontend supports the builder's
@@ -95,11 +98,12 @@ the repository's `GITHUB_TOKEN`. No registry secret is needed. The
 workflow does not publish release tags or `latest`, and the kit version
 still comes from `skills.yaml`.
 
-A separate job checks both platform manifests and the kit's index
-annotations, then runs checksum-pinned `kit-tck` v3.0.0-m.13 against the
-published digest. The
-workflow passes only after validation passes. Its summary gives the
-immutable image reference to use in a sandbox.
+A separate job checks both platform manifests and reads each platform's
+SBOM and provenance from the registry. It checks that the provenance
+names the current workflow run as its builder, then runs checksum-pinned
+`kit-tck` v3.0.0-m.13 against the published digest. The workflow passes
+only after validation passes. Its summary gives the immutable image
+reference to use in a sandbox.
 
 The GHCR package is private. To pull it, log in with a personal access
 token with `read:packages` access to the package:
