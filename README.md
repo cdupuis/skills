@@ -82,6 +82,10 @@ build `skills.yaml` for `linux/amd64` and `linux/arm64`. The builder reads
 the committed Git source, including the companion recipe and external
 skill pins.
 
+Both platforms build in one job with `distribute: false`, preserving the
+frontend's kit annotations on the image index. This kit stages files on
+the builder's CPU, so the build needs no emulation.
+
 The workflow pins the official kit frontend from commit `49950e9` by
 digest through `BUILDKIT_SYNTAX`. This frontend supports the builder's
 Git context. The current `:3` frontend does not yet include that support.
@@ -91,8 +95,9 @@ the repository's `GITHUB_TOKEN`. No registry secret is needed. The
 workflow does not publish release tags or `latest`, and the kit version
 still comes from `skills.yaml`.
 
-A separate job checks that both platform manifests are present and runs
-checksum-pinned `kit-tck` v3.0.0-m.13 against the published digest. The
+A separate job checks both platform manifests and the kit's index
+annotations, then runs checksum-pinned `kit-tck` v3.0.0-m.13 against the
+published digest. The
 workflow passes only after validation passes. Its summary gives the
 immutable image reference to use in a sandbox.
 
