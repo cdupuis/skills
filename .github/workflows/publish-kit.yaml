@@ -1,0 +1,129 @@
+name: publish kit
+
+on:
+  push:
+    branches: ['**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Let an active publication finish before another run for this branch.
+concurrency:
+  group: publish-kit-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    # The upstream workflow builds the committed Git source and owns
+    # multi-platform builds, registry publication, and signed provenance.
+    uses: docker/github-builder/.github/workflows/build.yml@bb1eb9fb69408ac52395fb21f49c6b52d564529a # v1
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    with:
+      output: image
+      context: .
+      file: skills.yaml
+      # Pin the official frontend with Git-context support until :3 includes it.
+      build-args: |
+        BUILDKIT_SYNTAX=docker.io/docker/sandbox-kit:49950e9@sha256:51916d1f9acf39354bbfbbdfb4ebf3bb74180d152e59338aa469e682470b025b
+      platforms: linux/amd64,linux/arm64
+      # Build on native runners for each platform. The merged index omits
+      # frontend annotations; kit consumers use the platform manifests.
+      # Each platform keeps its SBOM and provenance through the merge.
+      # The shared builder generates SLSA v1 provenance automatically,
+      # using mode=min for private repositories and mode=max for public ones.
+      distribute: true
+      sbom: true
+      push: true
+      meta-images: ghcr.io/cdupuis/skills
+      # Branch builds must not replace a release tag or latest.
+      meta-tags: type=raw,value=sha-${{ github.sha }}
+      meta-flavor: latest=false
+    secrets:
+      registry-auths: |
+        - registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+  validate:
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - name: Log in to GHCR
+        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install kit-tck
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          tool_dir="$RUNNER_TEMP/kit-tck"
+          archive=kit-tck_3.0.0-m.13_linux_amd64.tar.gz
+          mkdir -p "$tool_dir"
+          gh release download v3.0.0-m.13 \
+            --repo docker/sandbox-kit-spec \
+            --pattern "$archive" --dir "$tool_dir"
+          cd "$tool_dir"
+          # Pin the validator bytes as well as its release name.
+          printf '%s  %s\n' \
+            9aaf699a662e55c35a2930dd4778a7f4e2317b563d64cc9d21622e6bac6f744c \
+            "$archive" | sha256sum --check --strict
+          tar -xzf "$archive" kit-tck
+
+      - name: Validate the published kit
+        env:
+          DIGEST: ${{ needs.build.outputs.digest }}
+          BUILD_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$DIGEST"
+          image="ghcr.io/cdupuis/skills@$DIGEST"
+          index="$RUNNER_TEMP/kit-index.json"
+          docker buildx imagetools inspect "$image" --raw > "$index"
+          # Attestation descriptors use unknown/unknown. Only runnable
+          # manifests count toward the platforms requested above.
+          jq -e '
+            [.manifests[].platform
+             | select(.os != "unknown" or .architecture != "unknown")
+             | .os + "/" + .architecture]
+            | sort == ["linux/amd64", "linux/arm64"]' "$index"
+          # TCK permits missing index annotations with a warning and checks
+          # the kit annotations retained on each platform manifest.
+          # Read the actual attestation payloads, indexed by platform,
+          # rather than accepting descriptors without SBOM or provenance.
+          # Allow earlier attempts of this run when only validation is retried.
+          attestations="$RUNNER_TEMP/kit-attestations.json"
+          docker buildx imagetools inspect "$image" \
+            --format '{"sbom":{{json .SBOM}},"provenance":{{json .Provenance}}}' \
+            > "$attestations"
+          jq -e '
+            . as $attestations
+            | all(["linux/amd64", "linux/arm64"][];
+                . as $platform
+                | $attestations.sbom[$platform].SPDX as $sbom
+                | $attestations.provenance[$platform].SLSA as $provenance
+                | (($sbom.spdxVersion // "") | startswith("SPDX-"))
+                  and $sbom.SPDXID == "SPDXRef-DOCUMENT"
+                  and $provenance.buildDefinition.buildType == "https://github.com/moby/buildkit/blob/master/docs/attestations/slsa-definitions.md"
+                  and (($provenance.runDetails.builder.id // "")
+                    | startswith(env.BUILD_RUN_URL + "/attempts/")))' "$attestations"
+          # Validate the registry artifact, including every platform
+          # manifest, rather than trusting the build's local result.
+          "$RUNNER_TEMP/kit-tck/kit-tck" validate "$image"
+          {
+            printf 'Validated kit: `%s`\n\n' "$image"
+            printf 'Platforms: `linux/amd64`, `linux/arm64`.\n'
+            printf 'Verified SPDX SBOM and SLSA provenance for each platform.\n'
+          } >> "$GITHUB_STEP_SUMMARY"
