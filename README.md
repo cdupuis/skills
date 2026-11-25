@@ -82,6 +82,10 @@ build `skills.yaml` for `linux/amd64` and `linux/arm64`. The builder reads
 the committed Git source, including the companion recipe and external
 skill pins.
 
+The workflow pins the official kit frontend from commit `49950e9` by
+digest through `BUILDKIT_SYNTAX`. This frontend supports the builder's
+Git context. The current `:3` frontend does not yet include that support.
+
 Each run publishes `ghcr.io/cdupuis/skills:sha-<full-commit-sha>` using
 the repository's `GITHUB_TOKEN`. No registry secret is needed. The
 workflow does not publish release tags or `latest`, and the kit version

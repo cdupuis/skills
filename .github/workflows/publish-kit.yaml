@@ -26,6 +26,9 @@ jobs:
       output: image
       context: .
       file: skills.yaml
+      # Pin the official frontend with Git-context support until :3 includes it.
+      build-args: |
+        BUILDKIT_SYNTAX=docker.io/docker/sandbox-kit:49950e9@sha256:51916d1f9acf39354bbfbbdfb4ebf3bb74180d152e59338aa469e682470b025b
       platforms: linux/amd64,linux/arm64
       push: true
       meta-images: ghcr.io/cdupuis/skills
