@@ -1,0 +1,95 @@
+name: publish kit
+
+on:
+  push:
+    branches: ['**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Let an active publication finish before another run for this branch.
+concurrency:
+  group: publish-kit-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    # The upstream workflow builds the committed Git source and owns
+    # platform distribution, registry publication, and signed provenance.
+    uses: docker/github-builder/.github/workflows/build.yml@bb1eb9fb69408ac52395fb21f49c6b52d564529a # v1
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    with:
+      output: image
+      context: .
+      file: skills.yaml
+      platforms: linux/amd64,linux/arm64
+      push: true
+      meta-images: ghcr.io/cdupuis/skills
+      # Branch builds must not replace a release tag or latest.
+      meta-tags: type=raw,value=sha-${{ github.sha }}
+      meta-flavor: latest=false
+    secrets:
+      registry-auths: |
+        - registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+  validate:
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - name: Log in to GHCR
+        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install kit-tck
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          tool_dir="$RUNNER_TEMP/kit-tck"
+          archive=kit-tck_3.0.0-m.13_linux_amd64.tar.gz
+          mkdir -p "$tool_dir"
+          gh release download v3.0.0-m.13 \
+            --repo docker/sandbox-kit-spec \
+            --pattern "$archive" --dir "$tool_dir"
+          cd "$tool_dir"
+          # Pin the validator bytes as well as its release name.
+          printf '%s  %s\n' \
+            9aaf699a662e55c35a2930dd4778a7f4e2317b563d64cc9d21622e6bac6f744c \
+            "$archive" | sha256sum --check --strict
+          tar -xzf "$archive" kit-tck
+
+      - name: Validate the published kit
+        env:
+          DIGEST: ${{ needs.build.outputs.digest }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$DIGEST"
+          image="ghcr.io/cdupuis/skills@$DIGEST"
+          # Attestation descriptors use unknown/unknown. Only runnable
+          # manifests count toward the platforms requested above.
+          docker buildx imagetools inspect "$image" --raw | jq -e '
+            [.manifests[].platform
+             | select(.os != "unknown" or .architecture != "unknown")
+             | .os + "/" + .architecture]
+            | sort == ["linux/amd64", "linux/arm64"]'
+          # Validate the registry artifact, including every platform
+          # manifest, rather than trusting the build's local result.
+          "$RUNNER_TEMP/kit-tck/kit-tck" validate "$image"
+          {
+            printf 'Validated kit: `%s`\n\n' "$image"
+            printf 'Platforms: `linux/amd64`, `linux/arm64`.\n'
+          } >> "$GITHUB_STEP_SUMMARY"

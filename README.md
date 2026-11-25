@@ -73,7 +73,36 @@ $ sbx run claude --kit 'git+https://github.com/cdupuis/skills.git' .
 
 That `settings set` replaces the list, so include what is already in it.
 
-Nothing is published to a registry yet.
+## Publish and use the registry kit
+
+The [publish kit workflow](.github/workflows/publish-kit.yaml) runs on
+every branch push and can also be started from the Actions page. It calls
+[Docker's shared builder](https://github.com/docker/github-builder) to
+build `skills.yaml` for `linux/amd64` and `linux/arm64`. The builder reads
+the committed Git source, including the companion recipe and external
+skill pins.
+
+Each run publishes `ghcr.io/cdupuis/skills:sha-<full-commit-sha>` using
+the repository's `GITHUB_TOKEN`. No registry secret is needed. The
+workflow does not publish release tags or `latest`, and the kit version
+still comes from `skills.yaml`.
+
+A separate job checks that both platform manifests are present and runs
+checksum-pinned `kit-tck` v3.0.0-m.13 against the published digest. The
+workflow passes only after validation passes. Its summary gives the
+immutable image reference to use in a sandbox.
+
+The GHCR package is private. To pull it, log in with a personal access
+token with `read:packages` access to the package:
+
+```console
+$ printf '%s' "$GHCR_TOKEN" | docker login ghcr.io --username cdupuis --password-stdin
+$ sbx run claude --kit 'ghcr.io/cdupuis/skills@sha256:<digest>' .
+```
+
+Replace `<digest>` with the value from the successful run's summary.
+Allow `ghcr.io/cdupuis/` in `kit.allowedSources` alongside your existing
+entries before the first use.
 
 ## What the kit does
 
