@@ -84,8 +84,8 @@ skill pins.
 
 Each platform builds on its own native runner with `distribute: true`.
 The workflow requests an SPDX SBOM, and the shared builder generates and
-signs attestations with SLSA v1 provenance. Provenance uses `mode=min`
-for this private repository and `mode=max` for public repositories.
+signs attestations with SLSA v1 provenance. Provenance uses `mode=max`
+for this public repository and `mode=min` for private repositories.
 The combined index retains these attestations. Kit annotations remain
 on the platform manifests, so TCK warns about their absence on the index.
 
@@ -93,6 +93,7 @@ The workflow pins the official kit frontend from commit `49950e9` by
 digest through `BUILDKIT_SYNTAX`. This frontend supports the builder's
 Git context. The current `:3` frontend does not yet include that support.
 
+The image name comes from `github.repository`, lowercased for GHCR.
 Each run publishes `ghcr.io/cdupuis/skills:sha-<full-commit-sha>` using
 the repository's `GITHUB_TOKEN`. No registry secret is needed. Builds
 from the default branch also publish `ghcr.io/cdupuis/skills:latest`.
