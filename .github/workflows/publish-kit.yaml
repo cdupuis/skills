@@ -26,9 +26,9 @@ jobs:
       output: image
       context: .
       file: skills.yaml
-      # Pin the official frontend with Git-context support until :3 includes it.
+      # Pin the released frontend so builds do not follow a moving syntax tag.
       build-args: |
-        BUILDKIT_SYNTAX=docker.io/docker/sandbox-kit:49950e9@sha256:51916d1f9acf39354bbfbbdfb4ebf3bb74180d152e59338aa469e682470b025b
+        BUILDKIT_SYNTAX=docker.io/docker/sandbox-kit:3.0.0-m.14@sha256:fcd2684c83ae7b17dd4b757d8ff1ab207908453cd457e013c21cc574fd6e20cd
       platforms: linux/amd64,linux/arm64
       # Build on native runners for each platform. The merged index omits
       # frontend annotations; kit consumers use the platform manifests.
@@ -67,9 +67,9 @@ jobs:
       - name: Install kit-tck
         uses: docker/sandbox-kit-spec/actions/setup-tck@895b6ba40f07c6f0d3117f4303a6795ed8ae783b
         with:
-          version: v3.0.0-m.13
+          version: v3.0.0-m.14
           # Pin the validator bytes as well as its release name.
-          sha256: 9aaf699a662e55c35a2930dd4778a7f4e2317b563d64cc9d21622e6bac6f744c
+          sha256: cc246acdf0343f83a4f80d54fadf889f13e193c4b907d0c6c5a84aec7a46ebd8
 
       - name: Validate the published kit
         env:
